@@ -1,19 +1,26 @@
 {
-  "name": "server",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.6.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-validator": "^7.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.16.0",
+    "mongoose": "^8.14.3",
+    "multer": "^1.4.5-lts.2",
+    "nodemon": "^3.1.10",
+    "path": "^0.12.7"
+  },
+  "name": "bookmymandap_user",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon server.js"
   },
-  "author": "",
+  "author": "vaishnavi akshay tanay kunal",
   "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "bcrypt": "^6.0.0",
-    "express": "^5.1.0",
-    "mongodb": "^6.16.0",
-    "moongose": "^1.0.0",
-    "nodemon": "^3.1.10"
-  }
+  "description": "Mandap Booking Application"
 }
