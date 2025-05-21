@@ -1,4 +1,7 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+
 
 const userSchema = new mongoose.Schema({
   fullName: {
@@ -17,11 +20,29 @@ const userSchema = new mongoose.Schema({
   phoneNumber: {
     type: String,
     required: true,
+    match: [/^\d{10}$/, "Please enter a valid 10-digit phone number"],
+
     min: 10,
+
   },
   password: {
     type: String,
     required: true,
   },
 });
+userSchema.pre("save", async function (next) {
+  const user = this;
+  if (!user.isModified("password")) {
+    return next();
+  }
+  user.password = await bcrypt.hash(user.password, 10);
+  next();
+});
+
+userSchema.methods.generateJwtToken = function () {
+  return jwt.sign({ id: this._id }, process.env.SECRET_KEY, {
+    expiresIn: "5d",
+  });
+};
+
 module.exports = mongoose.model("users", userSchema);
