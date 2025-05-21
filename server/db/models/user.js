@@ -24,6 +24,8 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
+    min: 6,
+    match: [/^[A-Za-z0-9_.]+$/, "Please enter a valid 10-digit phone number"],
   },
 });
 
