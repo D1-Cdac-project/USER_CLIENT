@@ -1,14 +1,18 @@
+
 const userModel = require("../db/models/user");
 const generateToken = require("../config/generateToken");
 const bcrypt = require("bcrypt");
+
 
 exports.registerUser = async (req, res) => {
   try {
     const { fullName, email, phoneNumber, password } = req.body;
     const userExist = await userModel.findOne({ email });
     if (userExist) {
+
       return res.status(400).json({ message: "User already exists" });
     }
+
 
     const user = await userModel.create({
       fullName,
@@ -16,10 +20,11 @@ exports.registerUser = async (req, res) => {
       phoneNumber,
       password,
     });
-
+    
     generateToken(res, 201, user, true);
   } catch (error) {
     res.status(500).json({ message: error.message });
+
   }
 };
 
@@ -63,5 +68,6 @@ exports.getUserDetails = async (req, res) => {
     return res.status(200).json({ user });
   } catch (error) {
     return res.status(500).json({ message: error.message });
+
   }
 };
