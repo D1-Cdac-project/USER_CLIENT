@@ -1,4 +1,4 @@
-# ADMIN_BACKEND_SERVER
+# BOOKMYMANDAP ADMIN BACKEND
 
 This repository contains the backend server for the Admin module of the BookMyMandap application. Built using the **MERN Stack** (MongoDB, ExpressJS, ReactJS, NodeJS), this backend is designed to manage and control administrative operations such as user management, order monitoring, provider verification, and overall platform analytics.
 
