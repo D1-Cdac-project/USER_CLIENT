@@ -26,98 +26,6 @@ import { getUserDetails } from "../services/userService";
 import { toast } from "react-toastify";
 import EditReviewModal from "../components/EditReviewModal/EditReviewModal";
 
-const venue = {
-  id: 1,
-  name: "The Royal Mahal",
-  location: "Vayalur, Tiruchirappalli",
-  fullAddress: "Vayalur Road, Kumaravayalur Tiruchirappalli",
-  price: 125000,
-  priceDisplay: "₹1,25,000",
-  rating: 4.5,
-  reviews: [
-    {
-      id: 1,
-      userName: "Rajesh Kumar",
-      rating: 5,
-      comment:
-        "Amazing venue with great amenities. The staff was very helpful.",
-      date: "2024-02-15",
-      isVerifiedBooking: true,
-    },
-  ],
-  capacity: 900,
-  capacityDisplay: "500-1000",
-  mainImage:
-    "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&q=80",
-  images: [
-    {
-      id: 1,
-      url: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&q=80",
-      type: "image",
-    },
-    {
-      id: 2,
-      url: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&q=80",
-      type: "image",
-    },
-    {
-      id: 3,
-      url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-      type: "video",
-    },
-  ],
-  isShortlisted: false,
-  foodType: "Both",
-  description:
-    "We The Royal Mahal are from Tiruchirappalli and are here to talk about our venue. Our venue is a beautiful place that is very easy to commute to so that guests will not miss your event and all will be reaching the venue on time. Our venue is spacious enough to accommodate more guests. Our venue has excellent parking space so guests won't feel tumbled while parking their vehicles.",
-  amenities: [
-    "10 Rooms available",
-    "10 AC Rooms",
-    "10000 Square Feet Capacity",
-    "200 Parking",
-    "Electricity Back-up",
-    "Bridal Room",
-    "Parking",
-  ],
-  policies: [
-    "75% Payment On Date",
-    "25% Payment On Booking",
-    "Cancellation Policy - No Refund If Cancelled Before Three Months",
-  ],
-  eventAreas: [
-    {
-      name: "The Royal Mahal Banquet Hall",
-      type: "Indoor",
-      seatingCapacity: 900,
-      floatingCapacity: 1500,
-      pricePerDay: 125000,
-    },
-    {
-      name: "Royal Galaxy Mahal Banquet Hall",
-      type: "Indoor",
-      seatingCapacity: 300,
-      floatingCapacity: 450,
-      pricePerDay: 40000,
-    },
-  ],
-  otherInfo: {
-    propertyType: [
-      "Kalyana Mandapam",
-      "Mini Hall",
-      "Convention Hall",
-      "Wedding Venue",
-      "Banquet Hall",
-      "Fort And Palace",
-    ],
-    priceType: "Time Based Rent",
-    decoration: "Outside Decorators Allowed",
-    dj: "Outside DJ Allowed",
-    food: "Outside Food Allowed",
-    valetParking: "Yes",
-    allowedCuisine: "Both",
-  },
-};
-
 // Generate sample available dates
 const generateAvailableDates = () => {
   const dates = [];
@@ -136,7 +44,7 @@ const generateAvailableDates = () => {
 const MandapDetails = () => {
   const { mandapId } = useParams();
   const navigate = useNavigate();
-  const [selectedImage, setSelectedImage] = useState({});
+  const [selectedImage, setSelectedImage] = useState("");
   const [selectedTab, setSelectedTab] = useState("about");
   const [showAvailability, setShowAvailability] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(true);
@@ -154,6 +62,7 @@ const MandapDetails = () => {
   const [totalReviews, setTotalReviews] = useState(0);
   const [averageRating, setAverageRating] = useState(0);
   const [selectedReview, setSelectedReview] = useState<any | null>(null);
+  const default_img_url = "https://res.cloudinary.com/dgglqlhsm/image/upload/v1754673671/BookMyMandap/bjxp4lzznjlflnursrms.png";
   const getVenue = async () => {
     try {
       setIsLoading(true);
@@ -163,7 +72,7 @@ const MandapDetails = () => {
       setAvailableDates(
         result.availableDates.map((date: string) => new Date(date))
       );
-      setSelectedImage(result.venueImages?.[0] || venue.mainImage);
+      setSelectedImage(result.venueImages?.[0] || default_img_url);
     } catch (error) {
       console.error("Error fetching mandap details:", error);
     } finally {
@@ -232,19 +141,24 @@ const MandapDetails = () => {
 
   const venueImages = mandap.venueImages || [];
   const displayImages = [];
-  const defaultImage = venue.mainImage;
+  const defaultImage = default_img_url;
 
   if (venueImages.length === 0) {
-    displayImages.push(defaultImage, defaultImage, defaultImage, defaultImage);
+    displayImages.push(
+      { url: defaultImage },
+      { url: defaultImage },
+      { url: defaultImage },
+      { url: defaultImage }
+    );
   } else if (venueImages.length <= 3) {
-    displayImages.push(...venueImages);
+    venueImages.forEach(img => displayImages.push({ url: img }));
     while (displayImages.length < 4) {
-      displayImages.push(defaultImage);
+      displayImages.push({ url: defaultImage });
     }
   } else if (venueImages.length === 4) {
-    displayImages.push(...venueImages);
+    venueImages.forEach(img => displayImages.push({ url: img }));
   } else {
-    displayImages.push(...venueImages.slice(0, 3));
+    venueImages.slice(0, 3).forEach(img => displayImages.push({ url: img }));
     displayImages.push({
       url: defaultImage,
       count: venueImages.length - 3,
@@ -268,9 +182,16 @@ const MandapDetails = () => {
         {/* Main Image */}
         <div className="lg:col-span-4 relative rounded-lg overflow-hidden">
           <img
-            src={selectedImage.url || selectedImage}
+            src={selectedImage}
             alt={mandap.mandapName}
             className="w-full h-64 md:h-[500px] object-cover"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              const fallback = default_img_url;
+              if (target.src !== fallback) {
+                target.src = fallback;
+              }
+            }}
           />
         </div>
 
@@ -284,7 +205,7 @@ const MandapDetails = () => {
                 if (image.isCount) {
                   setShowAllImagesModal(true);
                 } else {
-                  setSelectedImage(image);
+                  setSelectedImage(image.url);
                 }
               }}
             >
@@ -295,12 +216,19 @@ const MandapDetails = () => {
               ) : (
                 <img
                   src={image.url}
-                  alt="Error loading image"
+                  alt="Thumbnail"
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (!target.src.includes(default_img_url)) {
+                      target.src = defaultImage;
+                    }
+                  }}
                 />
               )}
             </div>
           ))}
+
         </div>
       </div>
 
@@ -402,9 +330,16 @@ const MandapDetails = () => {
             </h2>
             <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-4">
               <img
-                src={venue.mainImage}
-                alt={venue.name}
+                src={selectedImage}
+                alt={mandap.mandapName}
                 className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  const fallback = default_img_url;
+                  if (target.src !== fallback) {
+                    target.src = fallback;
+                  }
+                }}
               />
               <div>
                 <h3 className="font-medium">Owned By {mandap.providerName}</h3>
@@ -496,9 +431,7 @@ const MandapDetails = () => {
       {selectedTab === "photos" && (
         <div className="space-y-6 md:space-y-8">
           <section>
-            <h2 className="text-lg md:text-xl font-semibold mb-4">
-              Photo Gallery
-            </h2>
+            <h2 className="text-lg md:text-xl font-semibold mb-4">Photo Gallery</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {venueImages.length > 0
                 ? venueImages.map((image: string, index: number) => (
@@ -509,8 +442,15 @@ const MandapDetails = () => {
                     >
                       <img
                         src={image}
-                        alt="Error loading image"
+                        alt="Mandap"
                         className="w-full h-full object-cover hover:scale-105 transition-transform"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          const fallback = default_img_url;
+                          if (target.src !== fallback) {
+                            target.src = fallback;
+                          }
+                        }}
                       />
                     </div>
                   ))
