@@ -26,11 +26,8 @@ import {
   setSelectedDates,
   updateFormData,
 } from "../features/booking/bookingSlice";
-// import { resetBookingState } from "../features/booking/bookingSlice";
-
-import { useSelector } from "react-redux";
-import { RootState } from "../app/store"; 
-import { useDispatch } from "react-redux"
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "../app/store";
 import { clearCatererBooking } from "../features/booking/catererBookingSlice";
 
 const Booking = () => {
@@ -39,10 +36,15 @@ const Booking = () => {
   const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
   const preSelectedDate = searchParams.get("date");
-
   const [isLoading, setIsLoading] = useState(true);
-  
-  const catererBooking = useSelector((state: RootState) => state.catererBooking);
+  const [isRazorpayLoaded, setIsRazorpayLoaded] = useState(false);
+  const [paymentOption, setPaymentOption] = useState<"full" | "advance">(
+    "full"
+  );
+
+  const catererBooking = useSelector(
+    (state: RootState) => state.catererBooking
+  );
   const {
     mandap,
     photographerList,
@@ -53,16 +55,36 @@ const Booking = () => {
     formData,
   } = useSelector((state: RootState) => state.booking);
 
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => setIsRazorpayLoaded(true);
+    script.onerror = () => {
+      showToast("Failed to load Razorpay SDK. Please try again.", "error");
+      setIsRazorpayLoaded(false);
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   const fetchMandapDetails = async () => {
     try {
       setIsLoading(true);
       const result = await getMandapDetails(mandapId);
-
       dispatch(setMandap(result));
-      dispatch(setAvailableDates(result.availableDates.map((date: string) => new Date(date))));
+      dispatch(
+        setAvailableDates(
+          result.availableDates.map((date: string) => new Date(date))
+        )
+      );
     } catch (error) {
       console.error("Error fetching mandap details:", error);
+      showToast("Failed to fetch mandap details", "error");
     } finally {
       setIsLoading(false);
     }
@@ -74,6 +96,7 @@ const Booking = () => {
       dispatch(setPhotographerList(result));
     } catch (error) {
       console.error("Error fetching photographer list:", error);
+      showToast("Failed to fetch photographer list", "error");
     }
   };
 
@@ -83,16 +106,17 @@ const Booking = () => {
       dispatch(setCatererList(result));
     } catch (error) {
       console.error("Error fetching caterer list:", error);
+      showToast("Failed to fetch caterer list", "error");
     }
   };
 
   const getRoomsList = async () => {
     try {
       const result = await getRoomsByMandapId(mandapId);
-
       dispatch(setRoomList(result));
     } catch (error) {
       console.error("Error fetching rooms:", error);
+      showToast("Failed to fetch rooms", "error");
     }
   };
 
@@ -106,7 +130,8 @@ const Booking = () => {
   }, [mandapId]);
 
   const calculateTotalPrice = () => {
-    let total = mandap.venuePricing || 0;
+    let total = (mandap.venuePricing || 0) + (mandap.securityDeposit || 0);
+    total *= selectedDates.length || 1;
 
     // Photography
     if (
@@ -152,6 +177,12 @@ const Booking = () => {
     return total;
   };
 
+  const calculateAdvancePrice = () => {
+    const total = calculateTotalPrice();
+    const advancePercentage = mandap.advancePayment || 0;
+    return (total * advancePercentage) / 100;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -166,15 +197,29 @@ const Booking = () => {
       return;
     }
 
+    if (!isRazorpayLoaded) {
+      showToast("Payment gateway is not loaded. Please try again.", "error");
+      return;
+    }
+
     const totalAmount = calculateTotalPrice();
+    const amountToPay =
+      paymentOption === "full" ? totalAmount : calculateAdvancePrice();
+
     const options = {
-      key: "rzp_test_6TnEsQ4TEWtn9r",
-      amount: Number(totalAmount) * 100,
+      key: "rzp_test_tycpez465i0XsP",
+      amount: Math.round(Number(amountToPay) * 100),
       currency: "INR",
       name: "Mandap Booking",
-      description: "Event Booking Payment",
-      image: "https://example.com/your_logo",
-      handler: async function (response) {
+      description: `Event Booking Payment (${
+        paymentOption === "full" ? "Full" : "Advance"
+      })`,
+      image: "https://via.placeholder.com/150",
+      handler: async function (response: {
+        razorpay_payment_id: string;
+        razorpay_order_id: string;
+        razorpay_signature: string;
+      }) {
         if (response.razorpay_payment_id) {
           const bookingData = {
             mandapId: mandapId,
@@ -191,25 +236,31 @@ const Booking = () => {
                 ? roomList[0]?._id
                 : null,
             totalAmount: totalAmount,
-            amountPaid: totalAmount,
+            amountPaid: amountToPay,
             paymentId: response.razorpay_payment_id,
           };
 
+          console.log(bookingData, "lfjasljdfljldjflj");
+
           try {
-            const res = await fetch(`http://localhost:4000/api/bookings`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-              },
-              body: JSON.stringify(bookingData),
-            });
+            const res = await fetch(
+              `http://localhost:4000/api/user/add-booking`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+                },
+                body: JSON.stringify(bookingData),
+              }
+            );
             const result = await res.json();
+            console.log("Booking response:============", res);
+
             if (res.ok) {
               showToast("Booking placed successfully!", "success");
-              // after successful booking, clearing caterer data from store
               dispatch(clearCatererBooking());
-              navigate("/bookings");
+              navigate("/booking-history");
             } else {
               showToast(result.message || "Failed to confirm booking", "error");
             }
@@ -235,13 +286,28 @@ const Booking = () => {
       theme: {
         color: "#3399cc",
       },
+      modal: {
+        ondismiss: () => {
+          showToast("Payment window closed. Please try again.", "error");
+        },
+      },
     };
 
-    const rzp1 = new window.Razorpay(options);
-    rzp1.open();
+    try {
+      const rzp1 = new window.Razorpay(options);
+      rzp1.on("payment.failed", function (response: any) {
+        showToast(
+          response.error.description || "Payment failed. Please try again.",
+          "error"
+        );
+      });
+      rzp1.open();
+    } catch (error) {
+      console.error("Error initializing Razorpay:", error);
+      showToast("Failed to initialize payment. Please try again.", "error");
+    }
   };
 
-  // Simple toast function (replace with a library like react-hot-toast if needed)
   const showToast = (message: string, type: "success" | "error") => {
     const toast = document.createElement("div");
     toast.className = `fixed top-4 right-4 p-4 rounded-lg text-white ${
@@ -264,7 +330,6 @@ const Booking = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -285,10 +350,8 @@ const Booking = () => {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Booking Form */}
           <div className="lg:col-span-2">
             <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Venue Summary */}
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <h2 className="text-xl font-semibold mb-4">Venue Details</h2>
                 <div className="flex items-start gap-4">
@@ -317,12 +380,18 @@ const Booking = () => {
                         <IndianRupee className="w-4 h-4 mr-1" />
                         <span>₹{mandap.venuePricing?.toLocaleString()}</span>
                       </div>
+                      <div className="flex items-center">
+                        <IndianRupee className="w-4 h-4 mr-1" />
+                        <span>
+                          Security Deposit: ₹
+                          {mandap.securityDeposit?.toLocaleString()}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Date Selection */}
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <label className="block text-lg font-semibold text-gray-800 mb-4 flex items-center">
                   <Calendar className="w-5 h-5 mr-2 text-blue-600" />
@@ -341,15 +410,17 @@ const Booking = () => {
                         )}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            dispatch(setSelectedDates([...selectedDates, date]));
-
+                            dispatch(
+                              setSelectedDates([...selectedDates, date])
+                            );
                           } else {
-                            dispatch(setSelectedDates(
-                              selectedDates.filter(
-                                (d) => d.getTime() !== date.getTime()
+                            dispatch(
+                              setSelectedDates(
+                                selectedDates.filter(
+                                  (d) => d.getTime() !== date.getTime()
+                                )
                               )
-                            ));
-
+                            );
                           }
                         }}
                         className="rounded w-4 h-4 text-blue-600"
@@ -362,7 +433,6 @@ const Booking = () => {
                 </div>
               </div>
 
-              {/* Photography Section */}
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center">
@@ -372,7 +442,7 @@ const Booking = () => {
                         Photography Services
                       </span>
                       <p className="text-sm text-gray-600">
-                        Capture your special moments
+                        Capture your special moments (Optional)
                       </p>
                     </div>
                   </div>
@@ -382,10 +452,12 @@ const Booking = () => {
                       className="sr-only peer"
                       checked={formData.includePhotography}
                       onChange={(e) =>
-                        dispatch(updateFormData({
-                          ...formData,
-                          includePhotography: e.target.checked,
-                        }))
+                        dispatch(
+                          updateFormData({
+                            ...formData,
+                            includePhotography: e.target.checked,
+                          })
+                        )
                       }
                     />
                     <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600"></div>
@@ -429,12 +501,14 @@ const Booking = () => {
                                     photographer._id
                                   }
                                   onChange={(e) =>
-                                    dispatch(updateFormData({
-                                      ...formData,
-                                      selectedPhotographer: e.target.checked
-                                        ? photographer._id
-                                        : "",
-                                    }))
+                                    dispatch(
+                                      updateFormData({
+                                        ...formData,
+                                        selectedPhotographer: e.target.checked
+                                          ? photographer._id
+                                          : "",
+                                      })
+                                    )
                                   }
                                   className="w-4 h-4 text-blue-600 rounded"
                                 />
@@ -457,13 +531,15 @@ const Booking = () => {
                                       selectedPhotographer?.photographyTypes.find(
                                         (pt) => pt.phtype === selectedCategory
                                       );
-                                    dispatch(updateFormData({
-                                      ...formData,
-                                      photographyCategory: selectedCategory,
-                                      photographyPrice: selectedType
-                                        ? selectedType.pricePerEvent
-                                        : 0,
-                                    }));
+                                    dispatch(
+                                      updateFormData({
+                                        ...formData,
+                                        photographyCategory: selectedCategory,
+                                        photographyPrice: selectedType
+                                          ? selectedType.pricePerEvent
+                                          : 0,
+                                      })
+                                    );
                                   }}
                                   disabled={
                                     formData.selectedPhotographer !==
@@ -487,12 +563,16 @@ const Booking = () => {
                                 ₹
                                 {(() => {
                                   if (
-                                    formData.selectedPhotographer === photographer._id &&
+                                    formData.selectedPhotographer ===
+                                      photographer._id &&
                                     formData.photographyCategory
                                   ) {
-                                    const selectedType = photographer.photographyTypes.find(
-                                      (pt) => pt.phtype === formData.photographyCategory
-                                    );
+                                    const selectedType =
+                                      photographer.photographyTypes.find(
+                                        (pt) =>
+                                          pt.phtype ===
+                                          formData.photographyCategory
+                                      );
                                     return selectedType?.pricePerEvent ?? 0;
                                   }
                                   return 0;
@@ -521,7 +601,6 @@ const Booking = () => {
                 )}
               </div>
 
-              {/* Catering Section */}
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center">
@@ -531,7 +610,7 @@ const Booking = () => {
                         Catering Services
                       </span>
                       <p className="text-sm text-gray-600">
-                        Delicious food for your guests
+                        Delicious food for your guests (Optional)
                       </p>
                     </div>
                   </div>
@@ -541,10 +620,12 @@ const Booking = () => {
                       className="sr-only peer"
                       checked={formData.includeCatering}
                       onChange={(e) =>
-                        dispatch(updateFormData({
-                          ...formData,
-                          includeCatering: e.target.checked,
-                        }))
+                        dispatch(
+                          updateFormData({
+                            ...formData,
+                            includeCatering: e.target.checked,
+                          })
+                        )
                       }
                     />
                     <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
@@ -563,7 +644,6 @@ const Booking = () => {
                             <th className="px-4 py-3 text-left text-sm font-semibold">
                               Caterer
                             </th>
-
                             <th className="px-4 py-3 text-left text-sm font-semibold">
                               Actions
                             </th>
@@ -582,12 +662,14 @@ const Booking = () => {
                                     formData.selectedCaterer === caterer._id
                                   }
                                   onChange={(e) =>
-                                    dispatch(updateFormData({
-                                      ...formData,
-                                      selectedCaterer: e.target.checked
-                                        ? caterer._id
-                                        : "",
-                                    }))
+                                    dispatch(
+                                      updateFormData({
+                                        ...formData,
+                                        selectedCaterer: e.target.checked
+                                          ? caterer._id
+                                          : "",
+                                      })
+                                    )
                                   }
                                   className="w-4 h-4 text-green-600 rounded"
                                 />
@@ -595,7 +677,6 @@ const Booking = () => {
                               <td className="px-4 py-3 text-sm font-medium">
                                 {caterer.catererName}
                               </td>
-
                               <td className="px-4 py-3">
                                 <button
                                   type="button"
@@ -617,7 +698,6 @@ const Booking = () => {
                 )}
               </div>
 
-              {/* Rooms Section */}
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center">
@@ -627,7 +707,7 @@ const Booking = () => {
                         Room Booking
                       </span>
                       <p className="text-sm text-gray-600">
-                        Comfortable stay for your guests
+                        Comfortable stay for your guests (Optional)
                       </p>
                     </div>
                   </div>
@@ -637,10 +717,12 @@ const Booking = () => {
                       className="sr-only peer"
                       checked={formData.includeRooms}
                       onChange={(e) =>
-                        dispatch(updateFormData({
-                          ...formData,
-                          includeRooms: e.target.checked,
-                        }))
+                        dispatch(
+                          updateFormData({
+                            ...formData,
+                            includeRooms: e.target.checked,
+                          })
+                        )
                       }
                     />
                     <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-orange-600"></div>
@@ -681,10 +763,12 @@ const Booking = () => {
                           onChange={(e) => {
                             const value = parseInt(e.target.value) || 0;
                             if (value <= (roomList[0].AcRoom?.noOfRooms || 0)) {
-                              dispatch(updateFormData({
-                                ...formData,
-                                acRooms: value,
-                              }));
+                              dispatch(
+                                updateFormData({
+                                  ...formData,
+                                  acRooms: value,
+                                })
+                              );
                             } else {
                               showToast(
                                 `Maximum ${
@@ -712,10 +796,12 @@ const Booking = () => {
                             if (
                               value <= (roomList[0].NonAcRoom?.noOfRooms || 0)
                             ) {
-                              dispatch(updateFormData({
-                                ...formData,
-                                nonAcRooms: value,
-                              }));
+                              dispatch(
+                                updateFormData({
+                                  ...formData,
+                                  nonAcRooms: value,
+                                })
+                              );
                             } else {
                               showToast(
                                 `Maximum ${
@@ -732,11 +818,51 @@ const Booking = () => {
                 )}
               </div>
 
-              {/* Submit Button */}
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <h2 className="text-xl font-semibold mb-4">Payment Options</h2>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="radio"
+                      name="paymentOption"
+                      value="full"
+                      checked={paymentOption === "full"}
+                      onChange={() => setPaymentOption("full")}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <label className="text-sm font-medium text-gray-700">
+                      Pay Full Amount (₹{calculateTotalPrice().toLocaleString()}
+                      )
+                    </label>
+                  </div>
+                  {mandap.advancePayment > 0 && (
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="radio"
+                        name="paymentOption"
+                        value="advance"
+                        checked={paymentOption === "advance"}
+                        onChange={() => setPaymentOption("advance")}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <label className="text-sm font-medium text-gray-700">
+                        Pay Advance ({mandap.advancePayment}% - ₹
+                        {calculateAdvancePrice().toLocaleString()})
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 font-semibold shadow-lg transform hover:scale-105 transition-all"
+                  disabled={!isRazorpayLoaded}
+                  className={`px-8 py-3 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all ${
+                    isRazorpayLoaded
+                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700"
+                      : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                  }`}
                 >
                   Proceed to Payment
                 </button>
@@ -744,7 +870,6 @@ const Booking = () => {
             </form>
           </div>
 
-          {/* Booking Summary Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-sm p-6 sticky top-8">
               <h3 className="text-lg font-semibold text-gray-700 mb-4">
@@ -753,9 +878,27 @@ const Booking = () => {
 
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Venue Cost</span>
+                  <span className="text-gray-600">
+                    Venue Cost ({selectedDates.length}{" "}
+                    {selectedDates.length === 1 ? "day" : "days"})
+                  </span>
                   <span className="font-semibold">
-                    ₹{(mandap.venuePricing || 0).toLocaleString()}
+                    ₹
+                    {(
+                      (mandap.venuePricing || 0) * selectedDates.length
+                    ).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">
+                    Security Deposit ({selectedDates.length}{" "}
+                    {selectedDates.length === 1 ? "day" : "days"})
+                  </span>
+                  <span className="font-semibold">
+                    ₹
+                    {(
+                      (mandap.securityDeposit || 0) * selectedDates.length
+                    ).toLocaleString()}
                   </span>
                 </div>
 
@@ -774,15 +917,7 @@ const Booking = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Catering</span>
                     <span className="font-semibold">
-                      ₹
-                      {(() => {
-                        const caterer = catererList.find(
-                          (c) => c._id === formData.selectedCaterer
-                        );
-                        return (
-                          catererBooking.totalPrice || 0
-                        ).toLocaleString();
-                      })()}
+                      ₹{(catererBooking.totalPrice || 0).toLocaleString()}
                     </span>
                   </div>
                 )}
@@ -830,6 +965,14 @@ const Booking = () => {
                       ₹{calculateTotalPrice().toLocaleString()}
                     </span>
                   </div>
+                  {paymentOption === "advance" && (
+                    <div className="flex justify-between items-center text-sm mt-2">
+                      <span>Advance Payment ({mandap.advancePayment}%)</span>
+                      <span className="text-blue-600">
+                        ₹{calculateAdvancePrice().toLocaleString()}
+                      </span>
+                    </div>
+                  )}
                   <p className="text-xs text-gray-500 mt-1">
                     All services included
                   </p>
@@ -844,7 +987,3 @@ const Booking = () => {
 };
 
 export default Booking;
-function dispatch(arg0: { payload: undefined; type: "catererBooking/clearCatererBooking"; }) {
-  throw new Error("Function not implemented.");
-}
-
