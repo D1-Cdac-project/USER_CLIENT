@@ -172,7 +172,6 @@ const Booking = () => {
 
   const calculateTotalPrice = () => {
     let total = (mandap.venuePricing || 0) + (mandap.securityDeposit || 0);
-    total *= selectedDates.length || 1;
 
     // Photography
     if (
@@ -212,6 +211,7 @@ const Booking = () => {
         formData.nonAcRooms * (roomList[0].NonAcRoom?.pricePerNight || 0);
     }
 
+    total *= selectedDates.length || 1;
     return total;
   };
 
@@ -443,7 +443,10 @@ const Booking = () => {
                   {availableDates.map((dateStr, index) => {
                     const date = new Date(dateStr);
                     return (
-                      <label key={index} className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg hover:bg-blue-50 transition-colors bg-white border">
+                      <label
+                        key={index}
+                        className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg hover:bg-blue-50 transition-colors bg-white border"
+                      >
                         <input
                           type="checkbox"
                           checked={selectedDates.some(
@@ -451,9 +454,7 @@ const Booking = () => {
                           )}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              dispatch(
-                                setSelectedDates([...selectedDates, date.toISOString()])
-                              );
+                              dispatch(setSelectedDates([...selectedDates, date.toISOString()]));
                             } else {
                               dispatch(
                                 setSelectedDates(
@@ -467,7 +468,12 @@ const Booking = () => {
                           className="rounded w-4 h-4 text-blue-600"
                         />
                         <span className="text-sm font-medium">
-                          {date.toLocaleDateString()}
+                          {date.toLocaleDateString("en-US", {
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
                         </span>
                       </label>
                     );
@@ -951,7 +957,10 @@ const Booking = () => {
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Photography</span>
                       <span className="font-semibold">
-                        ₹{formData.photographyPrice.toLocaleString()}
+                        ₹
+                        {(
+                          (formData.photographyPrice || 0) * selectedDates.length
+                        ).toLocaleString()}
                       </span>
                     </div>
                   )}
@@ -960,8 +969,11 @@ const Booking = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Catering</span>
                     <span className="font-semibold">
-                      ₹{(catererBooking.totalPrice || 0).toLocaleString()}
-                    </span>
+                        ₹
+                        {(
+                          (catererBooking.totalPrice || 0) * selectedDates.length
+                        ).toLocaleString()}
+                      </span>
                   </div>
                 )}
 
@@ -974,41 +986,46 @@ const Booking = () => {
                       <span className="font-semibold">
                         ₹
                         {(
-                          formData.acRooms *
-                            (roomList[0].AcRoom?.pricePerNight || 0) +
-                          formData.nonAcRooms *
-                            (roomList[0].NonAcRoom?.pricePerNight || 0)
+                          (
+                            formData.acRooms * (roomList[0].AcRoom?.pricePerNight || 0) +
+                            formData.nonAcRooms * (roomList[0].NonAcRoom?.pricePerNight || 0)
+                          ) * selectedDates.length
                         ).toLocaleString()}
                       </span>
                     </div>
                   )}
 
                 {selectedDates.length > 0 && (
-                <div className="border-t pt-4">
-                  <div className="text-sm text-gray-600 mb-2">
-                    Selected Dates:
+                  <div className="border-t pt-4">
+                    <div className="text-sm text-gray-600 mb-2">
+                      Selected Dates:
+                    </div>
+                    <div className="space-y-1">
+                      {selectedDates.map((dateStr, index) => {
+                        const date = new Date(dateStr);
+                        return (
+                          <div
+                            key={index}
+                            className="text-sm bg-blue-50 px-2 py-1 rounded"
+                          >
+                            {date.toLocaleDateString("en-US", {
+                              weekday: "long",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    {selectedDates.map((dateStr, index) => {
-                      const date = new Date(dateStr);
-                      return (
-                        <div
-                          key={index}
-                          className="text-sm bg-blue-50 px-2 py-1 rounded"
-                        >
-                          {date.toLocaleDateString()}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                )}
 
                 <div className="border-t pt-4">
                   <div className="flex justify-between items-center text-lg font-bold">
                     <span>Total Amount</span>
                     <span className="text-blue-600">
-                      ₹{calculateTotalPrice().toLocaleString()}
+                      {selectedDates.length > 0 ? `₹${calculateTotalPrice().toLocaleString()}` : "₹0"}
                     </span>
                   </div>
                   {paymentOption === "advance" && (
