@@ -45,6 +45,7 @@ function App() {
             element={<PhotographerDetails />}
           />
           <Route path="/caterer/:catererId" element={<CatererDetails />} />
+          <Route path="/mandap/:mandapId/book/caterer/:catererId" element={<CatererDetails />} />
           <Route path="/room/:roomId" element={<RoomDetails />} />
         </Routes>
         <Footer />
