@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import {
   Camera,
   Utensils,
@@ -25,6 +25,8 @@ import {
   setAvailableDates,
   setSelectedDates,
   updateFormData,
+  resetBookingState,
+  startBooking
 } from "../features/booking/bookingSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../app/store";
@@ -34,6 +36,7 @@ const default_img_url = "https://res.cloudinary.com/dgglqlhsm/image/upload/v1754
 const Booking = () => {
   const { mandapId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
   const preSelectedDate = searchParams.get("date");
@@ -42,6 +45,10 @@ const Booking = () => {
   const [paymentOption, setPaymentOption] = useState<"full" | "advance">(
     "full"
   );
+  // The mandapId we previously stored in Redux for booking page
+  const storedMandapId = useSelector((state: any) => state.booking.mandapId);
+  // To get mandapId we previously stored in Redux for catererDetails page
+  const bookingState = useSelector((state: RootState) => state.catererBooking);
 
   const catererBooking = useSelector(
     (state: RootState) => state.catererBooking
@@ -73,6 +80,39 @@ const Booking = () => {
     };
   }, []);
 
+  // Clearing Redux State on Unmount
+  useEffect(() => {
+    const path = location.pathname;
+
+    // Booking-related routes allowed to keep state
+    const bookingPages = [
+      new RegExp(`^/mandaps/${mandapId}/book$`),
+      /^\/photographer\/[^/]+$/,
+      /^\/caterer\/[^/]+$/,
+      /^\/room\/[^/]+$/,
+    ];
+
+    const isBookingFlow = bookingPages.some((regex) => regex.test(path));
+
+    if (isBookingFlow) {
+      // If booking for a different mandap → reset and start fresh
+      if (!storedMandapId || storedMandapId !== mandapId) {
+        dispatch(startBooking(mandapId!));
+      }
+    } else {
+      // Left booking flow → reset everything
+      dispatch(resetBookingState());
+    }
+  }, [location.pathname, mandapId, storedMandapId, dispatch]);
+  
+  // clear CatererBooking in store if perticular mandap booking page is rendered first time
+  useEffect(() => {
+    if (bookingState.mandapId && bookingState.mandapId !== mandapId) {
+      // Mandap changed → reset
+      dispatch(clearCatererBooking());
+    }
+  }, [mandapId, dispatch]);
+
   const fetchMandapDetails = async () => {
     try {
       setIsLoading(true);
@@ -80,7 +120,7 @@ const Booking = () => {
       dispatch(setMandap(result));
       dispatch(
         setAvailableDates(
-          result.availableDates.map((date: string) => new Date(date))
+          result.availableDates.map((date: string) => new Date(date).toISOString())
         )
       );
     } catch (error) {
@@ -154,8 +194,7 @@ const Booking = () => {
     // Catering
     if (
       formData.includeCatering &&
-      formData.selectedCaterer &&
-      formData.cateringPlan
+      formData.selectedCaterer 
     ) {
       const caterer = catererList.find(
         (c) => c._id === formData.selectedCaterer
@@ -163,9 +202,7 @@ const Booking = () => {
       const plan = caterer?.plans?.find(
         (p) => p.name === formData.cateringPlan
       );
-      if (plan) {
         total += catererBooking.totalPrice;
-      }
     }
 
     // Rooms
@@ -261,6 +298,7 @@ const Booking = () => {
             if (res.ok) {
               showToast("Booking placed successfully!", "success");
               dispatch(clearCatererBooking());
+              dispatch(resetBookingState());
               navigate("/booking-history");
             } else {
               showToast(result.message || "Failed to confirm booking", "error");
@@ -402,38 +440,39 @@ const Booking = () => {
                   Select Your Event Dates
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-64 overflow-y-auto border rounded-xl p-4 bg-gray-50">
-                  {availableDates.map((date, index) => (
-                    <label
-                      key={index}
-                      className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg hover:bg-blue-50 transition-colors bg-white border"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedDates.some(
-                          (d) => d.getTime() === date.getTime()
-                        )}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            dispatch(
-                              setSelectedDates([...selectedDates, date])
-                            );
-                          } else {
-                            dispatch(
-                              setSelectedDates(
-                                selectedDates.filter(
-                                  (d) => d.getTime() !== date.getTime()
+                  {availableDates.map((dateStr, index) => {
+                    const date = new Date(dateStr);
+                    return (
+                      <label key={index} className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg hover:bg-blue-50 transition-colors bg-white border">
+                        <input
+                          type="checkbox"
+                          checked={selectedDates.some(
+                            (d) => new Date(d).getTime() === date.getTime()
+                          )}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              dispatch(
+                                setSelectedDates([...selectedDates, date.toISOString()])
+                              );
+                            } else {
+                              dispatch(
+                                setSelectedDates(
+                                  selectedDates.filter(
+                                    (d) => new Date(d).getTime() !== date.getTime()
+                                  )
                                 )
-                              )
-                            );
-                          }
-                        }}
-                        className="rounded w-4 h-4 text-blue-600"
-                      />
-                      <span className="text-sm font-medium">
-                        {date.toLocaleDateString()}
-                      </span>
-                    </label>
-                  ))}
+                              );
+                            }
+                          }}
+                          className="rounded w-4 h-4 text-blue-600"
+                        />
+                        <span className="text-sm font-medium">
+                          {date.toLocaleDateString()}
+                        </span>
+                      </label>
+                    );
+                  })}
+
                 </div>
               </div>
 
@@ -685,7 +724,7 @@ const Booking = () => {
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    navigate(`/caterer/${caterer._id}`)
+                                    navigate(`/mandap/${mandapId}/book/caterer/${caterer._id}`)
                                   }
                                   className="text-blue-600 hover:text-blue-800 flex items-center text-sm font-medium hover:underline"
                                 >
@@ -945,22 +984,25 @@ const Booking = () => {
                   )}
 
                 {selectedDates.length > 0 && (
-                  <div className="border-t pt-4">
-                    <div className="text-sm text-gray-600 mb-2">
-                      Selected Dates:
-                    </div>
-                    <div className="space-y-1">
-                      {selectedDates.map((date, index) => (
+                <div className="border-t pt-4">
+                  <div className="text-sm text-gray-600 mb-2">
+                    Selected Dates:
+                  </div>
+                  <div className="space-y-1">
+                    {selectedDates.map((dateStr, index) => {
+                      const date = new Date(dateStr);
+                      return (
                         <div
                           key={index}
                           className="text-sm bg-blue-50 px-2 py-1 rounded"
                         >
                           {date.toLocaleDateString()}
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
-                )}
+                </div>
+              )}
 
                 <div className="border-t pt-4">
                   <div className="flex justify-between items-center text-lg font-bold">
