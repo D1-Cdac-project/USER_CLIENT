@@ -15,6 +15,7 @@ const BookingHistory = () => {
   const [bookings, setBookings] = useState<any[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const default_img_url = "https://res.cloudinary.com/dgglqlhsm/image/upload/v1754673671/BookMyMandap/bjxp4lzznjlflnursrms.png";
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -60,11 +61,16 @@ const BookingHistory = () => {
                 <div className="lg:w-1/3 h-full">
                   <img
                     src={
-                      booking?.mandapId?.venueImages?.[0] ||
-                      "https://via.placeholder.com/300"
+                      booking?.mandapId?.venueImages?.[0] || default_img_url
                     }
                     alt={booking?.mandapId?.mandapName || "Mandap"}
                     className="w-full max-h-56 lg:h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      if (!target.src.includes(default_img_url)) {
+                        target.src = default_img_url;
+                      }
+                    }}
                   />
                 </div>
 

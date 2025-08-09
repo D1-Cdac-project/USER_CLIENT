@@ -43,6 +43,7 @@ const MandapList = () => {
 
   const [mandaps, setMandaps] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
+  const default_img_url = "https://res.cloudinary.com/dgglqlhsm/image/upload/v1754673671/BookMyMandap/bjxp4lzznjlflnursrms.png";
 
   const {
     searchTerm,
@@ -376,9 +377,17 @@ const MandapList = () => {
           >
             <div className="relative">
               <img
-                src={venue.venueImages[0]}
+                src={
+                  venue.venueImages[0] || default_img_url
+                }
                 alt={venue.mandapName}
                 className="w-full h-40 md:h-48 object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (!target.src.includes("default-venue-placeholder")) {
+                    target.src = default_img_url;
+                  }
+                }}
               />
               <button
                 onClick={() => toggleFavorite(venue)}

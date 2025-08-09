@@ -29,6 +29,7 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../app/store";
 import { clearCatererBooking } from "../features/booking/catererBookingSlice";
+const default_img_url = "https://res.cloudinary.com/dgglqlhsm/image/upload/v1754673671/BookMyMandap/bjxp4lzznjlflnursrms.png";
 
 const Booking = () => {
   const { mandapId } = useParams();
@@ -356,12 +357,15 @@ const Booking = () => {
                 <h2 className="text-xl font-semibold mb-4">Venue Details</h2>
                 <div className="flex items-start gap-4">
                   <img
-                    src={
-                      mandap.venueImages?.[0] ||
-                      "https://via.placeholder.com/96"
-                    }
+                    src={mandap.venueImages?.[0] || default_img_url}
                     alt={mandap.mandapName}
                     className="w-24 h-24 object-cover rounded-lg"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      if (!target.src.includes(default_img_url)) {
+                        target.src = default_img_url;
+                      }
+                    }}
                   />
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold">
