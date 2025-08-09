@@ -53,7 +53,7 @@ const CatererDetails = () => {
   const recalcTotals = (updates: Partial<typeof bookingState>) => {
     if (!caterer) return;
 
-    const plates = updates.plates ?? bookingState.plates;
+    const plates = (updates.plates ?? bookingState.plates) || 0;
     const selectedPlan = updates.selectedPlan ?? bookingState.selectedPlan;
     const selectedItems = updates.selectedItems ?? bookingState.selectedItems;
 
