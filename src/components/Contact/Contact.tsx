@@ -101,7 +101,6 @@ export const Contact = () => {
         message: "",
       });
     } catch (err) {
-      console.log(err);
       toast.error("Failed to send message. Please try again.");
     }
   };

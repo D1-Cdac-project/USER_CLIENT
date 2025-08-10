@@ -71,13 +71,11 @@ export const registerUser = async (
       payload,
       { withCredentials: true }
     );
-    console.log(response.data);
     return response.data;
   } catch (error: any) {
     const err: ErrorResponse = error.response?.data || {
       message: "Unknown error occurred",
     };
-    console.log(err);
     throw err;
   }
 };

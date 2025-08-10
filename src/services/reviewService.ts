@@ -17,12 +17,10 @@ export async function getReviewsByMandapId(mandapId: string) {
   return result.data.data.reviews;
 }
 
-
-export async function deleteReviewById(reviewId: string){
+export async function deleteReviewById(reviewId: string) {
   const result = await axios.delete(`${BASE_URL}/delete-review/${reviewId}`, {
     withCredentials: true,
   });
-  console.log(result)
 }
 
 export async function getReviewByReviewId(reviewId: string) {
@@ -32,7 +30,11 @@ export async function getReviewByReviewId(reviewId: string) {
   return result.data.data.review;
 }
 
-export async function updateReview(reviewId: string, rating: number, comment: string) {
+export async function updateReview(
+  reviewId: string,
+  rating: number,
+  comment: string
+) {
   const result = await axios.put(
     `${BASE_URL}/update-review/${reviewId}`,
     {
