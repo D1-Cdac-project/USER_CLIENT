@@ -9,6 +9,8 @@ const BookingDetailsModal = ({ booking, onClose }) => {
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const default_img_url = "https://res.cloudinary.com/dgglqlhsm/image/upload/v1754673671/BookMyMandap/bjxp4lzznjlflnursrms.png";
+
 
   const handleReviewSubmit = async () => {
     if (!rating || !comment.trim()) {
@@ -58,9 +60,15 @@ const BookingDetailsModal = ({ booking, onClose }) => {
           <div className="border-b pb-6 mb-6">
             <div className="flex flex-col md:flex-row items-start gap-6">
               <img
-                src={booking?.mandapId?.venueImages?.[0]}
-                alt={booking?.mandapId?.mandapName}
+                src={booking?.mandapId?.venueImages?.[0] || default_img_url}
+                alt={booking?.mandapId?.mandapName || "Mandap"}
                 className="w-full md:w-48 h-32 object-cover rounded-lg"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (!target.src.includes(default_img_url)) {
+                    target.src = default_img_url;
+                  }
+                }}
               />
               <div className="flex-1">
                 <h3 className="text-xl md:text-2xl font-semibold mb-2">
