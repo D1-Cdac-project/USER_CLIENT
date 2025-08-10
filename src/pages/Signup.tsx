@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { ToastContainer } from "react-toastify";
-import { toast } from "react-toastify";
+
 import { useNavigate, Link } from "react-router-dom";
 import { User, Mail, Phone, Lock } from "lucide-react";
 import { registerUser, RegisterUserPayload } from "../services/userService";
+import toast from "react-hot-toast";
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
@@ -204,7 +204,6 @@ const Signup: React.FC = () => {
           </form>
         </div>
       </div>
-      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };

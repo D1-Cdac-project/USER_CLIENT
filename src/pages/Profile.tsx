@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Camera, Mail, Phone, MapPin } from "lucide-react";
+import { Camera, Mail, Phone } from "lucide-react";
 import { updateProfile, getUserDetails } from "../services/userService";
-import { ToastContainer } from "react-toastify";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 
 const states = [
   "Andhra Pradesh",
@@ -54,8 +53,8 @@ const Profile = () => {
       pinCode: "",
       fullAddress: "",
     },
-    profileImage: null as File | null, // For uploaded file
-    profileImageUrl: "", // For displaying the current image from backend
+    profileImage: null as File | null,
+    profileImageUrl: "",
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -304,16 +303,6 @@ const Profile = () => {
           </div>
         </div>
       </div>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
     </div>
   );
 };

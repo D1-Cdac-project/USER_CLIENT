@@ -1,16 +1,16 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
-import { toast } from "react-toastify";
-import { ToastContainer } from "react-toastify";
+
 import { X, MapPin, Calendar, Users, IndianRupee, Star } from "lucide-react";
+import toast from "react-hot-toast";
 
 const BookingDetailsModal = ({ booking, onClose }) => {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const default_img_url = "https://res.cloudinary.com/dgglqlhsm/image/upload/v1754673671/BookMyMandap/bjxp4lzznjlflnursrms.png";
-
+  const default_img_url =
+    "https://res.cloudinary.com/dgglqlhsm/image/upload/v1754673671/BookMyMandap/bjxp4lzznjlflnursrms.png";
 
   const handleReviewSubmit = async () => {
     if (!rating || !comment.trim()) {
@@ -232,7 +232,6 @@ const BookingDetailsModal = ({ booking, onClose }) => {
           )}
         </div>
       </div>
-      <ToastContainer position="top-center" />
     </div>
   );
 };

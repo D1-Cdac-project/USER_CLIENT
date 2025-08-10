@@ -8,10 +8,7 @@ import {
   addFavoriteMandap,
   removeFavoriteMandap,
 } from "../../services/favouriteServices";
-import {
-  getMandapRatingsSummary,
-  getReviewsByMandapId,
-} from "../../services/reviewService";
+import { getMandapRatingsSummary } from "../../services/reviewService";
 import { toast } from "react-hot-toast";
 
 interface Venue {
@@ -22,7 +19,7 @@ interface Venue {
   venuePricing: number;
   venueImages: string[];
   availableDates: string[];
-  venueType: string[]; // Updated to array
+  venueType: string[];
 }
 
 const MandapList = () => {
@@ -43,7 +40,8 @@ const MandapList = () => {
 
   const [mandaps, setMandaps] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
-  const default_img_url = "https://res.cloudinary.com/dgglqlhsm/image/upload/v1754673671/BookMyMandap/bjxp4lzznjlflnursrms.png";
+  const default_img_url =
+    "https://res.cloudinary.com/dgglqlhsm/image/upload/v1754673671/BookMyMandap/bjxp4lzznjlflnursrms.png";
 
   const {
     searchTerm,
@@ -137,6 +135,9 @@ const MandapList = () => {
       const effectiveDate = selectedDate;
       const effectiveCity = selectedCity;
 
+      // Check if venue has available dates
+      const hasAvailableDates = venue.availableDates?.length > 0;
+
       // Parse selectedDate to Date object
       const selectedDateObj = effectiveDate ? new Date(effectiveDate) : null;
       // Parse availableDates to Date objects and compare dates only (ignoring time)
@@ -210,6 +211,7 @@ const MandapList = () => {
       const matchesFoodType = !selectedFoodType || selectedFoodType === "Both";
 
       return (
+        hasAvailableDates &&
         matchesSearch &&
         matchesCity &&
         availableDateMatches &&
@@ -377,9 +379,7 @@ const MandapList = () => {
           >
             <div className="relative">
               <img
-                src={
-                  venue.venueImages[0] || default_img_url
-                }
+                src={venue.venueImages[0] || default_img_url}
                 alt={venue.mandapName}
                 className="w-full h-40 md:h-48 object-cover"
                 onError={(e) => {

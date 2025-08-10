@@ -14,8 +14,7 @@ import {
   Star,
 } from "lucide-react";
 import { Linkedin, Github, Instagram } from "lucide-react";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import toast from "react-hot-toast";
 
 const stats = [
   { number: "1000+", label: "Events Hosted", icon: Calendar },
@@ -334,7 +333,6 @@ export const About = () => {
           </div>
         </div>
       </div>
-      <ToastContainer position="bottom-right" autoClose={3000} />
     </div>
   );
 };
