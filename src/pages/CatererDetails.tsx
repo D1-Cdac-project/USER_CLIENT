@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Utensils,
   Star,
@@ -7,34 +7,38 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { ICaterer, getCatererById } from "../services/catererServices";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../app/store";
 import { setCatererBooking } from "../features/booking/catererBookingSlice";
 
-
 const CatererDetails = () => {
-  const { mandapId } = useParams();
+  const { mandapId, catererId } = useParams<{ mandapId?: string; catererId: string }>();
   const navigate = useNavigate();
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [plates, setPlates] = useState(100);
-  const [selectedPlan, setSelectedPlan] = useState<string>("");
-  const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
 
-  const { catererId } = useParams<{ catererId: string }>();
+  const bookingState = useSelector((state: RootState) => state.catererBooking);
+  const dispatch = useDispatch();
 
   const [caterer, setCaterer] = useState<ICaterer | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
 
-  const dispatch = useDispatch();
-
+  // Fetch Caterer
   useEffect(() => {
     const fetchCaterer = async () => {
       try {
         if (!catererId) return;
         const data = await getCatererById(catererId);
-        console.log(data);
         setCaterer(data);
+
+        // store base caterer info in Redux
+        dispatch(
+          setCatererBooking({
+            mandapId: mandapId,
+            catererId: data._id,
+            catererName: data.catererName,
+          })
+        );
       } catch (error) {
         console.error("Error fetching public caterer:", error);
       } finally {
@@ -43,50 +47,70 @@ const CatererDetails = () => {
     };
 
     fetchCaterer();
-  }, [catererId]);
+  }, [catererId, dispatch]);
 
-  if (loading) return <p>Loading...</p>;
-  if (!caterer) return <p>No caterer found</p>;
+  // Helper: Recalculate totals
+  const recalcTotals = (updates: Partial<typeof bookingState>) => {
+    if (!caterer) return;
 
-  if (!caterer) {
-    return <div>Caterer not found</div>;
-  }
+    const plates = (updates.plates ?? bookingState.plates) || 0;
+    const selectedPlan = updates.selectedPlan ?? bookingState.selectedPlan;
+    const selectedItems = updates.selectedItems ?? bookingState.selectedItems;
 
-  // Custom Menu Total
-  const customMenuTotal = selectedItems.reduce((total, item) => {
-    const itemPrice =
-      caterer.customizableItems.find((i) => i.itemName === item)?.itemPrice ||
-      0;
-    return total + itemPrice * plates;
-  }, 0);
+    const planTotal =
+      selectedPlan
+        ? (caterer.menuCategory.find((p) => p.category === selectedPlan)?.pricePerPlate || 0) * plates
+        : 0;
 
-  // Plan Total
-  const planTotal = selectedPlan
-    ? (caterer.menuCategory.find((p) => p.category === selectedPlan)
-        ?.pricePerPlate || 0) * plates
-    : 0;
+    const customMenuTotal = selectedItems.reduce((total, item) => {
+      const itemPrice =
+        caterer.customizableItems.find((i) => i.itemName === item)?.itemPrice || 0;
+      return total + itemPrice * plates;
+    }, 0);
 
-  const totalPrice = planTotal + customMenuTotal;
+    const totalPrice = planTotal + customMenuTotal;
+
+    dispatch(
+      setCatererBooking({
+        ...updates,
+        planTotal,
+        customMenuTotal,
+        totalPrice,
+      })
+    );
+  };
+
+  // Handlers
+  const handlePlanChange = (planCategory: string) => {
+    recalcTotals({
+      selectedPlan: bookingState.selectedPlan === planCategory ? "" : planCategory,
+    });
+  };
+
+  const handlePlatesChange = (value: number) => {
+    recalcTotals({ plates: value });
+  };
+
+  const handleItemToggle = (itemName: string, checked: boolean) => {
+    const updatedItems = checked
+      ? [...bookingState.selectedItems, itemName]
+      : bookingState.selectedItems.filter((i) => i !== itemName);
+
+    recalcTotals({ selectedItems: updatedItems });
+  };
 
   const nextReview = () => {
-    setCurrentReviewIndex((prev) => (prev + 1) % caterer.reviewsList.length);
+    setCurrentReviewIndex((prev) => (prev + 1) % (caterer?.reviewsList?.length || 1));
   };
 
   const prevReview = () => {
     setCurrentReviewIndex(
-      (prev) =>
-        (prev - 1 + caterer.reviewsList.length) % caterer.reviewsList.length
+      (prev) => (prev - 1 + (caterer?.reviewsList?.length || 1)) % (caterer?.reviewsList?.length || 1)
     );
   };
 
-  dispatch(
-  setCatererBooking({
-    catererId: caterer._id,
-    catererName: caterer.catererName,
-    totalPrice: totalPrice,
-  })
-);
-
+  if (loading) return <p>Loading...</p>;
+  if (!caterer) return <p>No caterer found</p>;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
@@ -137,10 +161,8 @@ const CatererDetails = () => {
                 <input
                   type="radio"
                   name="selectedPlan"
-                  checked={selectedPlan === plan.category}
-                  onChange={() =>
-                    setSelectedPlan(selectedPlan === plan.category ? "" : plan.category)
-                  }
+                  checked={bookingState.selectedPlan === plan.category}
+                  onChange={() => handlePlanChange(plan.category)}
                   className="w-5 h-5"
                 />
               </div>
@@ -157,8 +179,6 @@ const CatererDetails = () => {
 
               <div className="space-y-6">
                 <h4 className="font-medium text-lg">Menu Items</h4>
-
-                {/* Grouped Items by Type */}
                 {["Starter", "Main Course", "Dessert"].map((type) => {
                   const filteredItems = plan.menuItems.filter(
                     (item) => item.itemType === type
@@ -169,7 +189,8 @@ const CatererDetails = () => {
                       <ul className="list-disc list-inside space-y-1">
                         {filteredItems.map((item) => (
                           <li key={item._id}>
-                            {item.itemName} <span className="text-gray-500">– ₹{item.itemPrice}</span>
+                            {item.itemName}{" "}
+                            <span className="text-gray-500">– ₹{item.itemPrice}</span>
                           </li>
                         ))}
                       </ul>
@@ -191,7 +212,6 @@ const CatererDetails = () => {
             const items = caterer.customizableItems.filter(
               (item) => item.itemType === type
             );
-
             if (items.length === 0) return null;
 
             return (
@@ -205,16 +225,10 @@ const CatererDetails = () => {
                     <label className="flex items-center">
                       <input
                         type="checkbox"
-                        checked={selectedItems.includes(item.itemName)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedItems([...selectedItems, item.itemName]);
-                          } else {
-                            setSelectedItems(
-                              selectedItems.filter((i) => i !== item.itemName)
-                            );
-                          }
-                        }}
+                        checked={bookingState.selectedItems.includes(item.itemName)}
+                        onChange={(e) =>
+                          handleItemToggle(item.itemName, e.target.checked)
+                        }
                         className="mr-2"
                       />
                       {item.itemName}
@@ -232,39 +246,38 @@ const CatererDetails = () => {
           <input
             type="number"
             min="50"
-            value={plates}
-            onChange={(e) => setPlates(parseInt(e.target.value))}
+            value={bookingState.plates}
+            onChange={(e) => handlePlatesChange(parseInt(e.target.value))}
             className="w-32 px-4 py-2 border rounded-lg"
           />
         </div>
 
         <div className="mt-8 text-right">
-          {selectedPlan && (
+          {bookingState.selectedPlan && (
             <div className="mb-4">
               <div className="text-lg font-semibold">
-                Selected Plan: {selectedPlan}
+                Selected Plan: {bookingState.selectedPlan}
               </div>
               <div className="text-xl font-bold text-blue-600">
-                Plan Total: ₹{planTotal.toLocaleString()}
+                Plan Total: ₹{bookingState.planTotal.toLocaleString()}
               </div>
             </div>
           )}
 
-          {customMenuTotal > 0 && (
+          {bookingState.customMenuTotal > 0 && (
             <div className="mb-4">
               <div className="text-lg font-semibold">
-                Custom Menu Total: ₹{customMenuTotal.toLocaleString()}
+                Custom Menu Total: ₹{bookingState.customMenuTotal.toLocaleString()}
               </div>
             </div>
           )}
 
           <div className="text-2xl font-bold">
-            Grand Total: ₹{totalPrice.toLocaleString()}
+            Grand Total: ₹{bookingState.totalPrice.toLocaleString()}
           </div>
-          <div className="text-gray-600">{plates} plates</div>
+          <div className="text-gray-600">{bookingState.plates} plates</div>
         </div>
       </div>
-
 
       {/* Reviews */}
       <h2 className="text-2xl font-bold mb-8">Customer Reviews</h2>

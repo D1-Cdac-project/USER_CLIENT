@@ -1,12 +1,13 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface BookingState {
+  mandapId: string | null;
   mandap: any;
   photographerList: any[];
   catererList: any[];
   roomList: any;
-  availableDates: Date[];
-  selectedDates: Date[];
+  availableDates: string[];
+  selectedDates: string[];
   formData: {
     address: string;
     includePhotography: boolean;
@@ -23,6 +24,7 @@ interface BookingState {
 }
 
 const initialState: BookingState = {
+  mandapId: null,
   mandap: {},
   photographerList: [],
   catererList: [],
@@ -48,6 +50,16 @@ const bookingSlice = createSlice({
   name: "booking",
   initialState,
   reducers: {
+    startBooking: (state, action: PayloadAction<string>) => {
+      state.mandapId = action.payload;
+      state.mandap = {};
+      state.photographerList = [];
+      state.catererList = [];
+      state.roomList = {};
+      state.availableDates = [];
+      state.selectedDates = [];
+      state.formData = { ...initialState.formData };
+    },
     setMandap: (state, action: PayloadAction<any>) => {
       state.mandap = action.payload;
     },
@@ -60,10 +72,10 @@ const bookingSlice = createSlice({
     setRoomList: (state, action: PayloadAction<any>) => {
       state.roomList = action.payload;
     },
-    setAvailableDates: (state, action: PayloadAction<Date[]>) => {
+    setAvailableDates: (state, action: PayloadAction<string[]>) => {
       state.availableDates = action.payload;
     },
-    setSelectedDates: (state, action: PayloadAction<Date[]>) => {
+    setSelectedDates: (state, action: PayloadAction<string[]>) => {
       state.selectedDates = action.payload;
     },
     updateFormData: (
@@ -77,6 +89,7 @@ const bookingSlice = createSlice({
 });
 
 export const {
+  startBooking,
   setMandap,
   setPhotographerList,
   setCatererList,
