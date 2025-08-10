@@ -1,14 +1,26 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface CatererBookingState {
-  catererId: string | null;
-  catererName: string | null;
+  mandapId: string;
+  catererId: string;
+  catererName: string;
+  selectedItems: string[];
+  plates: number;
+  selectedPlan: string;
+  planTotal: number;
+  customMenuTotal: number;
   totalPrice: number;
 }
 
 const initialState: CatererBookingState = {
-  catererId: null,
-  catererName: null,
+  mandapId: "",
+  catererId: "",
+  catererName: "",
+  selectedItems: [],
+  plates: 100,
+  selectedPlan: "",
+  planTotal: 0,
+  customMenuTotal: 0,
   totalPrice: 0,
 };
 
@@ -16,22 +28,14 @@ const catererBookingSlice = createSlice({
   name: "catererBooking",
   initialState,
   reducers: {
-    setCatererBooking: (
-      state,
-      action: PayloadAction<{ catererId: string; catererName: string; totalPrice: number }>
-    ) => {
-      state.catererId = action.payload.catererId;
-      state.catererName = action.payload.catererName;
-      state.totalPrice = action.payload.totalPrice;
+    setCatererBooking(state, action: PayloadAction<Partial<CatererBookingState>>) {
+      return { ...state, ...action.payload };
     },
-    clearCatererBooking: (state) => {
-      state.catererId = null;
-      state.catererName = null;
-      state.totalPrice = 0;
+    clearCatererBooking() {
+      return initialState;
     },
   },
 });
 
 export const { setCatererBooking, clearCatererBooking } = catererBookingSlice.actions;
-
 export default catererBookingSlice.reducer;
