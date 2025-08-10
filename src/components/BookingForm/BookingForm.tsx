@@ -122,7 +122,6 @@ export const BookingForm = ({
 
   const fetchMandapDetails = async () => {
     try {
-      console.log(mandapId);
       setIsLoading(true);
       const result = await getMandapDetailsById(mandapId);
       setMandap(result.data.data.mandap);
@@ -146,7 +145,6 @@ export const BookingForm = ({
   const getCatererList = async () => {
     try {
       const result = await getCaterersByMandapId(mandapId);
-      console.log(result);
       setCatererList(result.data.data.caterers);
     } catch (error) {
       console.error("Error fetching caterer list:", error);
@@ -158,7 +156,6 @@ export const BookingForm = ({
   const getRoomsList = async () => {
     try {
       const result = await getRoomsByMandapId(mandapId);
-      console.log(result);
     } catch (error) {
       console.error("Error fetching rooms:", error);
     }

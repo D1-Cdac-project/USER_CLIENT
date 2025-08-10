@@ -28,7 +28,6 @@ const BookingHistory = () => {
         const data = await getBookingsByUser();
         setBookings(data);
       } catch (err) {
-        console.error("Failed to fetch bookings:", err);
         toast.error("Failed to fetch bookings");
       } finally {
         setLoading(false);

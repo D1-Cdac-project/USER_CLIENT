@@ -62,7 +62,8 @@ const MandapDetails = () => {
   const [totalReviews, setTotalReviews] = useState(0);
   const [averageRating, setAverageRating] = useState(0);
   const [selectedReview, setSelectedReview] = useState<any | null>(null);
-  const default_img_url = "https://res.cloudinary.com/dgglqlhsm/image/upload/v1754673671/BookMyMandap/bjxp4lzznjlflnursrms.png";
+  const default_img_url =
+    "https://res.cloudinary.com/dgglqlhsm/image/upload/v1754673671/BookMyMandap/bjxp4lzznjlflnursrms.png";
   const getVenue = async () => {
     try {
       setIsLoading(true);
@@ -84,7 +85,6 @@ const MandapDetails = () => {
   const getReview = async () => {
     const result = await getReviewsByMandapId(mandapId);
     setReviews(result);
-    console.log("Reviews:", result);
 
     const rating = await getMandapRatingsSummary();
     setAverageRating(rating[1].averageRating.toFixed(1));
@@ -102,7 +102,6 @@ const MandapDetails = () => {
     setReviews(reviews.filter((review) => review._id !== reviewId));
     try {
       const response = await deleteReviewById(reviewId);
-      console.log(response);
     } catch (error) {
       setReviews(originalReviews); // Restore original reviews on error
       console.error("Error deleting review:", error);
@@ -119,7 +118,6 @@ const MandapDetails = () => {
     const fetchRating = async () => {
       try {
         const res = await getRatingSummaryByMandapId(mandapId);
-        console.log(res.data);
         setRating(res.data.data);
       } catch (err) {
         console.error("Failed to fetch rating summary:", err);
@@ -151,14 +149,14 @@ const MandapDetails = () => {
       { url: defaultImage }
     );
   } else if (venueImages.length <= 3) {
-    venueImages.forEach(img => displayImages.push({ url: img }));
+    venueImages.forEach((img) => displayImages.push({ url: img }));
     while (displayImages.length < 4) {
       displayImages.push({ url: defaultImage });
     }
   } else if (venueImages.length === 4) {
-    venueImages.forEach(img => displayImages.push({ url: img }));
+    venueImages.forEach((img) => displayImages.push({ url: img }));
   } else {
-    venueImages.slice(0, 3).forEach(img => displayImages.push({ url: img }));
+    venueImages.slice(0, 3).forEach((img) => displayImages.push({ url: img }));
     displayImages.push({
       url: defaultImage,
       count: venueImages.length - 3,
@@ -228,7 +226,6 @@ const MandapDetails = () => {
               )}
             </div>
           ))}
-
         </div>
       </div>
 
@@ -431,7 +428,9 @@ const MandapDetails = () => {
       {selectedTab === "photos" && (
         <div className="space-y-6 md:space-y-8">
           <section>
-            <h2 className="text-lg md:text-xl font-semibold mb-4">Photo Gallery</h2>
+            <h2 className="text-lg md:text-xl font-semibold mb-4">
+              Photo Gallery
+            </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {venueImages.length > 0
                 ? venueImages.map((image: string, index: number) => (
