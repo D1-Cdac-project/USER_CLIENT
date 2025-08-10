@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import {
+  useParams,
+  useNavigate,
+  useSearchParams,
+  useLocation,
+} from "react-router-dom";
 import {
   Camera,
   Utensils,
@@ -26,12 +31,16 @@ import {
   setSelectedDates,
   updateFormData,
   resetBookingState,
-  startBooking
+  startBooking,
 } from "../features/booking/bookingSlice";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../app/store";
 import { clearCatererBooking } from "../features/booking/catererBookingSlice";
-const default_img_url = "https://res.cloudinary.com/dgglqlhsm/image/upload/v1754673671/BookMyMandap/bjxp4lzznjlflnursrms.png";
+import { addBooking } from "../services/bookingService";
+import { useRazorpayPayment } from "../services/useRazorpayPayment";
+import { toast } from "react-hot-toast";
+const default_img_url =
+  "https://res.cloudinary.com/dgglqlhsm/image/upload/v1754673671/BookMyMandap/bjxp4lzznjlflnursrms.png";
 
 const Booking = () => {
   const { mandapId } = useParams();
@@ -41,15 +50,17 @@ const Booking = () => {
   const [searchParams] = useSearchParams();
   const preSelectedDate = searchParams.get("date");
   const [isLoading, setIsLoading] = useState(true);
-  const [isRazorpayLoaded, setIsRazorpayLoaded] = useState(false);
   const [paymentOption, setPaymentOption] = useState<"full" | "advance">(
     "full"
   );
-  // The mandapId we previously stored in Redux for booking page
-  const storedMandapId = useSelector((state: any) => state.booking.mandapId);
-  // To get mandapId we previously stored in Redux for catererDetails page
-  const bookingState = useSelector((state: RootState) => state.catererBooking);
+  const {
+    initiatePayment,
+    isRazorpayLoaded,
+    error: razorpayError,
+  } = useRazorpayPayment();
 
+  const storedMandapId = useSelector((state: any) => state.booking.mandapId);
+  const bookingState = useSelector((state: RootState) => state.catererBooking);
   const catererBooking = useSelector(
     (state: RootState) => state.catererBooking
   );
@@ -63,52 +74,33 @@ const Booking = () => {
     formData,
   } = useSelector((state: RootState) => state.booking);
 
-  // Load Razorpay script
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    script.onload = () => setIsRazorpayLoaded(true);
-    script.onerror = () => {
-      showToast("Failed to load Razorpay SDK. Please try again.", "error");
-      setIsRazorpayLoaded(false);
-    };
-    document.body.appendChild(script);
+    if (razorpayError) {
+      toast.error(razorpayError);
+    }
+  }, [razorpayError]);
 
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
-  // Clearing Redux State on Unmount
   useEffect(() => {
     const path = location.pathname;
-
-    // Booking-related routes allowed to keep state
     const bookingPages = [
       new RegExp(`^/mandaps/${mandapId}/book$`),
       /^\/photographer\/[^/]+$/,
       /^\/caterer\/[^/]+$/,
       /^\/room\/[^/]+$/,
     ];
-
     const isBookingFlow = bookingPages.some((regex) => regex.test(path));
 
     if (isBookingFlow) {
-      // If booking for a different mandap → reset and start fresh
       if (!storedMandapId || storedMandapId !== mandapId) {
         dispatch(startBooking(mandapId!));
       }
     } else {
-      // Left booking flow → reset everything
       dispatch(resetBookingState());
     }
   }, [location.pathname, mandapId, storedMandapId, dispatch]);
-  
-  // clear CatererBooking in store if perticular mandap booking page is rendered first time
+
   useEffect(() => {
     if (bookingState.mandapId && bookingState.mandapId !== mandapId) {
-      // Mandap changed → reset
       dispatch(clearCatererBooking());
     }
   }, [mandapId, dispatch]);
@@ -120,12 +112,14 @@ const Booking = () => {
       dispatch(setMandap(result));
       dispatch(
         setAvailableDates(
-          result.availableDates.map((date: string) => new Date(date).toISOString())
+          result.availableDates.map((date: string) =>
+            new Date(date).toISOString()
+          )
         )
       );
     } catch (error) {
       console.error("Error fetching mandap details:", error);
-      showToast("Failed to fetch mandap details", "error");
+      toast.error("Failed to fetch mandap details");
     } finally {
       setIsLoading(false);
     }
@@ -137,7 +131,7 @@ const Booking = () => {
       dispatch(setPhotographerList(result));
     } catch (error) {
       console.error("Error fetching photographer list:", error);
-      showToast("Failed to fetch photographer list", "error");
+      toast.error("Failed to fetch photographer list");
     }
   };
 
@@ -147,7 +141,7 @@ const Booking = () => {
       dispatch(setCatererList(result));
     } catch (error) {
       console.error("Error fetching caterer list:", error);
-      showToast("Failed to fetch caterer list", "error");
+      toast.error("Failed to fetch caterer list");
     }
   };
 
@@ -157,7 +151,7 @@ const Booking = () => {
       dispatch(setRoomList(result));
     } catch (error) {
       console.error("Error fetching rooms:", error);
-      showToast("Failed to fetch rooms", "error");
+      toast.error("Failed to fetch rooms");
     }
   };
 
@@ -173,7 +167,6 @@ const Booking = () => {
   const calculateTotalPrice = () => {
     let total = (mandap.venuePricing || 0) + (mandap.securityDeposit || 0);
 
-    // Photography
     if (
       formData.includePhotography &&
       formData.selectedPhotographer &&
@@ -190,21 +183,16 @@ const Booking = () => {
       }
     }
 
-    // Catering
-    if (
-      formData.includeCatering &&
-      formData.selectedCaterer 
-    ) {
+    if (formData.includeCatering && formData.selectedCaterer) {
       const caterer = catererList.find(
         (c) => c._id === formData.selectedCaterer
       );
       const plan = caterer?.plans?.find(
         (p) => p.name === formData.cateringPlan
       );
-        total += catererBooking.totalPrice;
+      total += catererBooking.totalPrice;
     }
 
-    // Rooms
     if (formData.includeRooms && roomList && roomList[0]) {
       total +=
         formData.acRooms * (roomList[0].AcRoom?.pricePerNight || 0) +
@@ -225,18 +213,18 @@ const Booking = () => {
     e.preventDefault();
 
     if (!localStorage.getItem("userToken")) {
-      showToast("Please login to make a payment", "error");
+      toast.error("Please login to make a payment");
       navigate("/login");
       return;
     }
 
     if (selectedDates.length === 0) {
-      showToast("Please select at least one date for your event", "error");
+      toast.error("Please select at least one date for your event");
       return;
     }
 
     if (!isRazorpayLoaded) {
-      showToast("Payment gateway is not loaded. Please try again.", "error");
+      toast.error("Payment gateway is not loaded. Please try again.");
       return;
     }
 
@@ -253,67 +241,6 @@ const Booking = () => {
         paymentOption === "full" ? "Full" : "Advance"
       })`,
       image: "https://via.placeholder.com/150",
-      handler: async function (response: {
-        razorpay_payment_id: string;
-        razorpay_order_id: string;
-        razorpay_signature: string;
-      }) {
-        if (response.razorpay_payment_id) {
-          const bookingData = {
-            mandapId: mandapId,
-            orderDates: selectedDates.map(
-              (date) => date.toISOString().split("T")[0]
-            ),
-            photographer: formData.includePhotography
-              ? [formData.selectedPhotographer]
-              : [],
-            caterer: formData.includeCatering ? [formData.selectedCaterer] : [],
-            room:
-              formData.includeRooms &&
-              (formData.acRooms > 0 || formData.nonAcRooms > 0)
-                ? roomList[0]?._id
-                : null,
-            totalAmount: totalAmount,
-            amountPaid: amountToPay,
-            paymentId: response.razorpay_payment_id,
-          };
-
-          console.log(bookingData, "lfjasljdfljldjflj");
-
-          try {
-            const res = await fetch(
-              `http://localhost:4000/api/user/add-booking`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-                },
-                body: JSON.stringify(bookingData),
-              }
-            );
-            const result = await res.json();
-            console.log("Booking response:============", res);
-
-            if (res.ok) {
-              showToast("Booking placed successfully!", "success");
-              dispatch(clearCatererBooking());
-              dispatch(resetBookingState());
-              navigate("/booking-history");
-            } else {
-              showToast(result.message || "Failed to confirm booking", "error");
-            }
-          } catch (error) {
-            console.error("Error confirming booking:", error);
-            showToast(
-              "An error occurred while confirming your booking",
-              "error"
-            );
-          }
-        } else {
-          showToast("Payment failed. Please try again.", "error");
-        }
-      },
       prefill: {
         name: "User Name",
         email: "user@example.com",
@@ -327,36 +254,63 @@ const Booking = () => {
       },
       modal: {
         ondismiss: () => {
-          showToast("Payment window closed. Please try again.", "error");
+          toast.error("Payment window closed. Please try again.");
         },
       },
     };
 
     try {
-      const rzp1 = new window.Razorpay(options);
-      rzp1.on("payment.failed", function (response: any) {
-        showToast(
-          response.error.description || "Payment failed. Please try again.",
-          "error"
-        );
-      });
-      rzp1.open();
-    } catch (error) {
-      console.error("Error initializing Razorpay:", error);
-      showToast("Failed to initialize payment. Please try again.", "error");
-    }
-  };
+      const response = await initiatePayment(options);
+      if (!response.razorpay_payment_id) {
+        throw new Error("Payment ID not received from Razorpay");
+      }
+      const bookingData = {
+        mandapId: mandapId!,
+        orderDates: selectedDates.map((date) => {
+          const dateObj = typeof date === "string" ? new Date(date) : date;
+          if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
+            throw new Error(`Invalid date format: ${date}`);
+          }
+          return dateObj.toISOString().split("T")[0];
+        }),
+        photographer: formData.includePhotography
+          ? [formData.selectedPhotographer]
+          : [],
+        caterer: formData.includeCatering ? [formData.selectedCaterer] : [],
+        room:
+          formData.includeRooms &&
+          (formData.acRooms > 0 || formData.nonAcRooms > 0)
+            ? roomList[0]?._id
+            : null,
+        totalAmount: totalAmount,
+        amountPaid: amountToPay,
+        paymentId: response.razorpay_payment_id,
+      };
 
-  const showToast = (message: string, type: "success" | "error") => {
-    const toast = document.createElement("div");
-    toast.className = `fixed top-4 right-4 p-4 rounded-lg text-white ${
-      type === "success" ? "bg-green-500" : "bg-red-500"
-    } shadow-lg z-50 animate-fade-in-out`;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => {
-      toast.remove();
-    }, 3000);
+      try {
+        const result = await addBooking(bookingData);
+
+        if (result.status) {
+          toast.success("Booking placed successfully!");
+          dispatch(clearCatererBooking());
+          dispatch(resetBookingState());
+          setTimeout(() => {
+            navigate("/booking-history");
+          }, 200);
+        } else {
+          toast.error(result.data.message || "Failed to confirm booking");
+        }
+      } catch (error: any) {
+        console.error(
+          "Error confirming booking:",
+          error.response?.data || error.message
+        );
+        toast.error("An error occurred while confirming your booking");
+      }
+    } catch (error: any) {
+      console.error("Error initiating payment:", error.message);
+      toast.error("Failed to initiate payment. Please try again.");
+    }
   };
 
   if (isLoading) {
@@ -454,12 +408,18 @@ const Booking = () => {
                           )}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              dispatch(setSelectedDates([...selectedDates, date.toISOString()]));
+                              dispatch(
+                                setSelectedDates([
+                                  ...selectedDates,
+                                  date.toISOString(),
+                                ])
+                              );
                             } else {
                               dispatch(
                                 setSelectedDates(
                                   selectedDates.filter(
-                                    (d) => new Date(d).getTime() !== date.getTime()
+                                    (d) =>
+                                      new Date(d).getTime() !== date.getTime()
                                   )
                                 )
                               );
@@ -478,7 +438,6 @@ const Booking = () => {
                       </label>
                     );
                   })}
-
                 </div>
               </div>
 
@@ -730,7 +689,9 @@ const Booking = () => {
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    navigate(`/mandap/${mandapId}/book/caterer/${caterer._id}`)
+                                    navigate(
+                                      `/mandap/${mandapId}/book/caterer/${caterer._id}`
+                                    )
                                   }
                                   className="text-blue-600 hover:text-blue-800 flex items-center text-sm font-medium hover:underline"
                                 >
@@ -819,11 +780,10 @@ const Booking = () => {
                                 })
                               );
                             } else {
-                              showToast(
+                              toast.error(
                                 `Maximum ${
                                   roomList[0].AcRoom?.noOfRooms || 0
-                                } AC rooms can be booked.`,
-                                "error"
+                                } AC rooms can be booked.`
                               );
                             }
                           }}
@@ -852,11 +812,10 @@ const Booking = () => {
                                 })
                               );
                             } else {
-                              showToast(
+                              toast.error(
                                 `Maximum ${
                                   roomList[0].NonAcRoom?.noOfRooms || 0
-                                } Non-AC rooms can be booked.`,
-                                "error"
+                                } Non-AC rooms can be booked.`
                               );
                             }
                           }}
@@ -924,7 +883,6 @@ const Booking = () => {
               <h3 className="text-lg font-semibold text-gray-700 mb-4">
                 Booking Summary
               </h3>
-
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">
@@ -933,9 +891,8 @@ const Booking = () => {
                   </span>
                   <span className="font-semibold">
                     ₹
-                    {(
-                      (mandap.venuePricing || 0) * selectedDates.length
-                    ).toLocaleString()}
+                    {(mandap.venuePricing || 0) *
+                      selectedDates.length.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -945,12 +902,10 @@ const Booking = () => {
                   </span>
                   <span className="font-semibold">
                     ₹
-                    {(
-                      (mandap.securityDeposit || 0) * selectedDates.length
-                    ).toLocaleString()}
+                    {(mandap.securityDeposit || 0) *
+                      selectedDates.length.toLocaleString()}
                   </span>
                 </div>
-
                 {formData.includePhotography &&
                   formData.selectedPhotographer &&
                   formData.photographyCategory && (
@@ -958,25 +913,21 @@ const Booking = () => {
                       <span className="text-gray-600">Photography</span>
                       <span className="font-semibold">
                         ₹
-                        {(
-                          (formData.photographyPrice || 0) * selectedDates.length
-                        ).toLocaleString()}
+                        {(formData.photographyPrice || 0) *
+                          selectedDates.length.toLocaleString()}
                       </span>
                     </div>
                   )}
-
                 {formData.includeCatering && formData.selectedCaterer && (
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Catering</span>
                     <span className="font-semibold">
-                        ₹
-                        {(
-                          (catererBooking.totalPrice || 0) * selectedDates.length
-                        ).toLocaleString()}
-                      </span>
+                      ₹
+                      {(catererBooking.totalPrice || 0) *
+                        selectedDates.length.toLocaleString()}
+                    </span>
                   </div>
                 )}
-
                 {formData.includeRooms &&
                   (formData.acRooms > 0 || formData.nonAcRooms > 0) &&
                   roomList &&
@@ -985,16 +936,14 @@ const Booking = () => {
                       <span className="text-gray-600">Accommodation</span>
                       <span className="font-semibold">
                         ₹
-                        {(
-                          (
-                            formData.acRooms * (roomList[0].AcRoom?.pricePerNight || 0) +
-                            formData.nonAcRooms * (roomList[0].NonAcRoom?.pricePerNight || 0)
-                          ) * selectedDates.length
-                        ).toLocaleString()}
+                        {(formData.acRooms *
+                          (roomList[0].AcRoom?.pricePerNight || 0) +
+                          formData.nonAcRooms *
+                            (roomList[0].NonAcRoom?.pricePerNight || 0)) *
+                          selectedDates.length.toLocaleString()}
                       </span>
                     </div>
                   )}
-
                 {selectedDates.length > 0 && (
                   <div className="border-t pt-4">
                     <div className="text-sm text-gray-600 mb-2">
@@ -1020,12 +969,13 @@ const Booking = () => {
                     </div>
                   </div>
                 )}
-
                 <div className="border-t pt-4">
                   <div className="flex justify-between items-center text-lg font-bold">
                     <span>Total Amount</span>
                     <span className="text-blue-600">
-                      {selectedDates.length > 0 ? `₹${calculateTotalPrice().toLocaleString()}` : "₹0"}
+                      {selectedDates.length > 0
+                        ? `₹${calculateTotalPrice().toLocaleString()}`
+                        : "₹0"}
                     </span>
                   </div>
                   {paymentOption === "advance" && (
