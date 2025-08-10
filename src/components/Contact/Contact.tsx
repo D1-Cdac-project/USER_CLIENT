@@ -12,8 +12,7 @@ import {
   Instagram,
   Linkedin,
 } from "lucide-react";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import toast from "react-hot-toast";
 
 const contactInfo = [
   {
@@ -306,7 +305,6 @@ export const Contact = () => {
           loading="lazy"
         ></iframe>
       </div>
-      <ToastContainer position="bottom-right" autoClose={3000} />
     </div>
   );
 };

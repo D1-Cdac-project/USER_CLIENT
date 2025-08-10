@@ -1,12 +1,11 @@
 import React, { useState } from "react";
-import { toast } from "react-toastify";
-import { ToastContainer } from "react-toastify";
 import { useNavigate, Link } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
 import { loginUser } from "../services/userService";
 import { useDispatch } from "react-redux";
 import { loginSuccess } from "../features/auth/authSlice";
 import { AppDispatch } from "../app/store";
+import toast from "react-hot-toast";
 
 const Login = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -116,7 +115,6 @@ const Login = () => {
           </form>
         </div>
       </div>
-      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };
