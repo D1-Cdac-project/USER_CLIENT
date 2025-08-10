@@ -7,6 +7,8 @@ import React from "react";
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <Provider store={store}>
+      <App />
+    </Provider>
   </React.StrictMode>
 );
