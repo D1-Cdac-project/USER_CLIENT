@@ -90,7 +90,6 @@ const CompletePayment = () => {
             paymentId: response.razorpay_payment_id,
           };
           const result = await completePayment(id!, paymentData);
-          console.log("Complete payment API response:", result);
           toast.success("Payment completed successfully!");
           navigate("/booking-history");
         } catch (error) {

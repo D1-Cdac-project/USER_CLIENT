@@ -35,8 +35,8 @@ const Favorites = () => {
   const [ratings, setRatings] = useState<
     Record<string, { averageRating: number; totalReviews: number }>
   >({});
-  const default_img_url = "https://res.cloudinary.com/dgglqlhsm/image/upload/v1754673671/BookMyMandap/bjxp4lzznjlflnursrms.png";
-
+  const default_img_url =
+    "https://res.cloudinary.com/dgglqlhsm/image/upload/v1754673671/BookMyMandap/bjxp4lzznjlflnursrms.png";
 
   const fetchFavorites = async () => {
     try {
@@ -74,8 +74,6 @@ const Favorites = () => {
         setFavorites(favs.data.data.favoriteMandaps);
 
         const summary = await getMandapRatingsSummary();
-
-        console.log(summary);
 
         const map = summary.reduce((acc: any, item: any) => {
           acc[item._id] = {
@@ -117,19 +115,17 @@ const Favorites = () => {
               className="border rounded-lg overflow-hidden bg-white shadow-sm"
             >
               <div className="relative">
-              <img
-                src={
-                  venue.venueImages[0] || default_img_url
-                }
-                alt={venue.mandapName}
-                className="w-full h-40 md:h-48 object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  if (!target.src.includes("default-venue-placeholder")) {
-                    target.src = default_img_url;
-                  }
-                }}
-              />
+                <img
+                  src={venue.venueImages[0] || default_img_url}
+                  alt={venue.mandapName}
+                  className="w-full h-40 md:h-48 object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (!target.src.includes("default-venue-placeholder")) {
+                      target.src = default_img_url;
+                    }
+                  }}
+                />
                 <button
                   onClick={() => handleRemoveFavorite(venue._id)}
                   className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
