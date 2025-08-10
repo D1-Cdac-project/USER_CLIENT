@@ -137,9 +137,9 @@ const CatererDetails = () => {
             <h1 className="text-3xl font-bold mb-2">{caterer.catererName}</h1>
             <div className="flex items-center mb-4">
               <Star className="w-5 h-5 text-yellow-400 fill-current" />
-              <span className="ml-1 font-medium">{caterer.rating || 4.5}</span>
+              <span className="ml-1 font-medium">{caterer.rating || 0.0}</span>
               <span className="text-gray-500 ml-1">
-                ({caterer.reviewsList?.length || 10} reviews)
+                ({caterer.reviewsList?.length || "No reviews yet"})
               </span>
             </div>
             <p className="text-gray-600">{caterer.about}</p>
@@ -190,7 +190,6 @@ const CatererDetails = () => {
                         {filteredItems.map((item) => (
                           <li key={item._id}>
                             {item.itemName}{" "}
-                            <span className="text-gray-500">– ₹{item.itemPrice}</span>
                           </li>
                         ))}
                       </ul>
@@ -207,7 +206,7 @@ const CatererDetails = () => {
       <div className="bg-white rounded-xl shadow-lg p-8 mb-12">
         <h2 className="text-2xl font-bold mb-8">Build Your Custom Menu</h2>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-32">
           {["Starter", "Main Course", "Dessert"].map((type) => {
             const items = caterer.customizableItems.filter(
               (item) => item.itemType === type
@@ -313,34 +312,42 @@ const CatererDetails = () => {
           </div>
         </div>
 
-        {caterer.reviewsList?.length > 1 && (
+        {caterer.reviewsList?.length > 0 ? (
           <>
-            <button
-              onClick={prevReview}
-              className="absolute left-0 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-lg hover:bg-gray-50"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <button
-              onClick={nextReview}
-              className="absolute right-0 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-lg hover:bg-gray-50"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
+            {caterer.reviewsList.length > 1 && (
+              <>
+                <button
+                  onClick={prevReview}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-lg hover:bg-gray-50"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={nextReview}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 bg-white rounded-full p-2 shadow-lg hover:bg-gray-50"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </>
+            )}
 
             {/* Review indicators */}
-            <div className="flex justify-center mt-6">
-              {caterer.reviewsList?.map((_, index) => (
-                <button
-                  key={index}
-                  className={`w-2 h-2 rounded-full mx-1 ${
-                    index === currentReviewIndex ? "bg-blue-500" : "bg-gray-300"
-                  }`}
-                  onClick={() => setCurrentReviewIndex(index)}
-                />
-              ))}
-            </div>
+            {caterer.reviewsList.length > 1 && (
+              <div className="flex justify-center mt-6">
+                {caterer.reviewsList.map((_, index) => (
+                  <button
+                    key={index}
+                    className={`w-2 h-2 rounded-full mx-1 ${
+                      index === currentReviewIndex ? "bg-blue-500" : "bg-gray-300"
+                    }`}
+                    onClick={() => setCurrentReviewIndex(index)}
+                  />
+                ))}
+              </div>
+            )}
           </>
+        ) : (
+          <div className="flex justify-center mt-6">No reviews yet</div>
         )}
       </div>
     </div>

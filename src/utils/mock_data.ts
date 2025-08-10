@@ -1,137 +1,147 @@
 export const STATIC_CITIES = [
   {
     name: "Mumbai",
-    venues: "2,435",
     image:
       "https://images.unsplash.com/photo-1529253355930-ddbe423a2ac7?auto=format&fit=crop&q=80",
   },
   {
     name: "Delhi",
-    venues: "1,703",
     image:
-      "https://images.unsplash.com/photo-1515091943-9d5c0ad475af?auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1587474260584-136574528ed5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     name: "Pune",
-    venues: "1,293",
     image:
-      "https://images.unsplash.com/photo-1558420534-b667b5a79474?auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1614716194506-ef3694ae131a?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     name: "Kolkata",
-    venues: "1,119",
     image:
-      "https://images.unsplash.com/photo-1558431382-27e303142255?auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1571679654681-ba01b9e1e117?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     name: "Bangalore",
-    venues: "2,062",
     image:
-      "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&q=80",
+      "https://plus.unsplash.com/premium_photo-1697729434815-40ab4970ebc1?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
-
   {
     name: "Hyderabad",
-    venues: "1,542",
     image:
-      "https://images.unsplash.com/photo-1580394356040-fd3b60c7c9bc?auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1551161242-b5af797b7233?q=80&w=1151&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     name: "Chennai",
-    venues: "1,398",
     image:
-      "https://images.unsplash.com/photo-1605702012930-e7eaf3c2c4ff?auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1661366698983-3cb843219300?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     name: "Ahmedabad",
-    venues: "1,010",
     image:
-      "https://images.unsplash.com/photo-1603262110263-99a911fdfd9e?auto=format&fit=crop&q=80",
+      "https://plus.unsplash.com/premium_photo-1697730447144-a2f7257e4a1f?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     name: "Jaipur",
-    venues: "985",
     image:
-      "https://images.unsplash.com/photo-1621415541212-3aa2abf6c57d?auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1603262110263-fb0112e7cc33?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     name: "Lucknow",
-    venues: "903",
     image:
       "https://images.unsplash.com/photo-1626963551056-91a2bb6c05f3?auto=format&fit=crop&q=80",
   },
-
   {
     name: "Indore",
-    venues: "832",
     image:
       "https://images.unsplash.com/photo-1588497911081-d8b9a2bbdf1f?auto=format&fit=crop&q=80",
   },
   {
     name: "Surat",
-    venues: "799",
     image:
       "https://images.unsplash.com/photo-1585463537278-05fe9ddcae02?auto=format&fit=crop&q=80",
   },
   {
     name: "Nagpur",
-    venues: "778",
     image:
-      "https://images.unsplash.com/photo-1625472602012-c98d04bc0d66?auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1616787542248-e33d15b2ad95?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     name: "Chandigarh",
-    venues: "750",
     image:
       "https://images.unsplash.com/photo-1593072878486-7e332cb85ed6?auto=format&fit=crop&q=80",
   },
   {
     name: "Bhopal",
-    venues: "732",
     image:
       "https://images.unsplash.com/photo-1621164097524-6c539cdb9e91?auto=format&fit=crop&q=80",
+  },
+  {
+    name: "Nashik",
+    image:
+      "https://images.unsplash.com/photo-1694667509674-676629c9d069?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    name: "Goa",
+    image:
+      "https://images.unsplash.com/photo-1677267166119-8d0d6f040f3a?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGdvYSUyMGNpdHl8ZW58MHx8MHx8fDA%3D",
+  },
+  {
+    name: "Varanasi",
+    image:
+      "https://images.unsplash.com/photo-1625159803315-e5ff1a5f8d67?auto=format&fit=crop&q=80",
+  },
+  {
+    name: "Amritsar",
+    image:
+      "https://images.unsplash.com/photo-1619185562188-ff03f98367b8?auto=format&fit=crop&q=80",
+  },
+  {
+    name: "Shimla",
+    image:
+      "https://plus.unsplash.com/premium_photo-1697729729075-3e56242aef49?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    name: "Mysore",
+    image:
+      "https://images.unsplash.com/photo-1600112356915-089abb8fc71a?q=80&w=1294&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    name: "Jodhpur",
+    image:
+      "https://plus.unsplash.com/premium_photo-1697730421382-bc8dd92f83ba?q=80&w=1169&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
 ];
 
 export const STATIC_VENUE_TYPES = [
   {
     type: "Banquet Hall",
-    count: "0",
-    image: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?...",
+    image: "https://images.unsplash.com/photo-1698934641149-93431f3bd4f7?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     type: "Community Hall",
-    count: "0",
-    image: "https://images.unsplash.com/photo-1598986641786-49e46d8f2dc6?...",
+    image: "https://images.unsplash.com/photo-1563292749-0e070ca58b29?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     type: "Lawn",
-    count: "0",
-    image: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?...",
+    image: "https://images.unsplash.com/photo-1670529776180-60e4132ab90c?q=80&w=1172&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     type: "Resort",
-    count: "0",
-    image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?...",
+    image: "https://images.unsplash.com/photo-1610641818989-c2051b5e2cfd?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     type: "Farmhouse",
-    count: "0",
-    image: "https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd4?...",
+    image: "https://images.unsplash.com/photo-1620827195512-6422baa0c5a1?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     type: "Hotel",
-    count: "0",
-    image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?...",
+    image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     type: "Rooftop",
-    count: "0",
-    image: "https://images.unsplash.com/photo-1551963831-b3b1ca40c98e?...",
+    image: "https://images.unsplash.com/photo-1621275471769-e6aa344546d5?q=80&w=1173&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     type: "Convention Centre",
-    count: "0",
-    image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?...",
+    image: "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1169&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
 ];
