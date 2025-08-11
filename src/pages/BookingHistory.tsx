@@ -13,14 +13,16 @@ import BookingDetailsModal from "../components/BookingDetailsModal/BookingDetail
 import toast from "react-hot-toast";
 
 const BookingHistory = () => {
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
+  const [bookings, setBookings] = useState([]);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [bookingToCancel, setBookingToCancel] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const default_img_url =
     "https://res.cloudinary.com/dgglqlhsm/image/upload/v1754673671/BookMyMandap/bjxp4lzznjlflnursrms.png";
 
-  const currentDate = new Date(new Date());
+  const currentDate = new Date();
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -37,27 +39,35 @@ const BookingHistory = () => {
     fetchBookings();
   }, []);
 
-  const handleCompletePayment = (booking: any) => {
+  const handleCompletePayment = (booking) => {
     navigate(`/complete-payment/${booking._id}`);
   };
 
-  const handleDeleteBooking = async (bookingId: string) => {
-    if (window.confirm("Are you sure you want to delete this booking?")) {
-      try {
-        await deleteBooking(bookingId);
-        setBookings(bookings.filter((booking) => booking._id !== bookingId));
-        toast.success("Booking deleted successfully");
-      } catch (error) {
-        toast.error("Failed to delete booking");
-      }
+  const handleDeleteBooking = async (bookingId) => {
+    setBookingToCancel(bookingId);
+    setShowCancelModal(true);
+  };
+
+  const confirmCancelBooking = async () => {
+    try {
+      await deleteBooking(bookingToCancel);
+      setBookings(
+        bookings.filter((booking) => booking._id !== bookingToCancel)
+      );
+      toast.success("Booking cancelled successfully");
+      setShowCancelModal(false);
+      setBookingToCancel(null);
+    } catch (error) {
+      toast.error("Failed to delete booking");
+      setShowCancelModal(false);
     }
   };
 
-  const handleUpdateBooking = (bookingId: string) => {
+  const handleUpdateBooking = (bookingId) => {
     toast.error("Update booking feature is not yet implemented");
   };
 
-  const canCancelBooking = (booking: any) => {
+  const canCancelBooking = (booking) => {
     if (booking.paymentStatus === "Cancelled") return false;
     const bookedDate = new Date(booking?.orderDates?.[0]);
     return currentDate <= bookedDate;
@@ -88,7 +98,7 @@ const BookingHistory = () => {
                     alt={booking?.mandapId?.mandapName || "Mandap"}
                     className="w-full max-h-56 lg:h-full object-cover"
                     onError={(e) => {
-                      const target = e.target as HTMLImageElement;
+                      const target = e.target;
                       if (!target.src.includes(default_img_url)) {
                         target.src = default_img_url;
                       }
@@ -192,6 +202,30 @@ const BookingHistory = () => {
           booking={selectedBooking}
           onClose={() => setSelectedBooking(null)}
         />
+      )}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Confirm Cancellation</h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to cancel this booking?
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmCancelBooking}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
